@@ -1,0 +1,12 @@
+streamlit
+crewai
+langchain-core
+langchain-google-genai
+langchain-openai
+fastapi
+uvicorn
+python-dotenv
+pydantic
+google-generativeai
+openai
+pillow
