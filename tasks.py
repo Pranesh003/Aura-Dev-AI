@@ -22,8 +22,9 @@ arch_task = Task(
 # 3. Code Implementation Task
 dev_task = Task(
     description="""Generate real project files based on the Architectural Blueprint. 
-    Use the format: ---FILE_START--- filename|content ---FILE_END--- for EVERY file. 
-    Ensure PEP8 compliance and modularity.""",
+    You MUST use the write_file_tool to save EVERY single file required for the complete project into the generated_project/ directory.
+    When using the write_file_tool, pass the input EXACTLY in this format: filename.extension|code_content
+    Do not just output the code; you must execute the write_file_tool for each file. Ensure PEP8 compliance and modularity.""",
     expected_output="Complete codebase in generated_project/ directory.",
     agent=developer,
     context=[arch_task]

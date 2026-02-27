@@ -14,6 +14,8 @@ load_dotenv()
 # Using correctly formatted GenAI models for LiteLLM
 VISION_MODELS = [
     "openrouter/qwen/qwen3.5-35b-a3b",
+    "models/gemini-3-flash-preview",
+    "models/gemini-3.1-pro-preview",
     "models/gemini-flash-latest",
     "models/gemini-2.0-flash",
     "models/gemini-pro-latest"
@@ -21,6 +23,8 @@ VISION_MODELS = [
 
 TEXT_MODELS = [
     "openrouter/qwen/qwen3.5-35b-a3b",
+    "models/gemini-3-flash-preview",
+    "models/gemini-3.1-pro-preview",
     "models/gemini-flash-latest",
     "models/gemini-2.0-flash",
     "models/gemini-pro-latest"
@@ -84,7 +88,38 @@ class ResilientLLM(BaseChatModel):
     def call(self, messages: List[Any], callbacks: Optional[List[Any]] = None, **kwargs) -> str:
         """Compatibility layer for CrewAI's custom LLM interface."""
         res = self.invoke(messages, **kwargs)
+        if hasattr(res, 'content') and isinstance(res.content, list):
+            text_content = ""
+            for item in res.content:
+                if isinstance(item, dict) and "text" in item:
+                    text_content += item["text"]
+                elif isinstance(item, str):
+                    text_content += item
+            return text_content
         return res.content
+        
+    def supports_stop_words(self) -> bool:
+        """CrewAI Agent executor explicitly checks this attribute."""
+        return True
+
+    def _normalize_result(self, res: ChatResult) -> ChatResult:
+        if not res or not hasattr(res, 'generations'):
+            return res
+        for generation in res.generations:
+            if hasattr(generation, 'message') and getattr(generation.message, 'content', None) is not None:
+                if isinstance(generation.message.content, list):
+                    text_content = ""
+                    for item in generation.message.content:
+                        if isinstance(item, dict) and "text" in item:
+                            text_content += item["text"]
+                        elif isinstance(item, str):
+                            text_content += item
+                    try:
+                        generation.message.content = text_content
+                    except Exception:
+                        from langchain_core.messages import AIMessage
+                        generation.message = AIMessage(content=text_content)
+        return res
 
     def _generate(
         self,
@@ -117,7 +152,7 @@ class ResilientLLM(BaseChatModel):
         for key in ["available_functions", "from_task", "from_agent", "response_model", "callbacks"]:
             kwargs.pop(key, None)
 
-        while attempts < 12:
+        while attempts < 8:
             is_openai = "gpt" in current_model.lower()
             is_openrouter = "openrouter" in current_model.lower() or "qwen" in current_model.lower()
             
@@ -129,17 +164,18 @@ class ResilientLLM(BaseChatModel):
                         base_url="https://openrouter.ai/api/v1",
                         model=raw_model,
                         openai_api_key=os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY"),
-                        temperature=kwargs.get("temperature", 0.7)
+                        temperature=kwargs.get("temperature", 0.7),
+                        max_retries=0
                     )
                     res = llm._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
                     print("DEBUG: _generate returned successfully via OpenRouter.")
                     self.current_key_idx = 0
-                    return res
+                    return self._normalize_result(res)
                 except Exception as e:
                     import sys
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     print(f"DEBUG: [OpenRouter ERROR] {str(e)}")
-                    if "quota" not in str(e).lower() and "429" not in str(e).lower() and "insufficient" not in str(e).lower():
+                    if "quota" not in str(e).lower() and "429" not in str(e).lower() and "insufficient" not in str(e).lower() and "credits" not in str(e).lower():
                         raise e
             elif not is_openai:
                 keys_to_try = self.google_keys[self.current_key_idx:] + self.google_keys[:self.current_key_idx]
@@ -159,6 +195,7 @@ class ResilientLLM(BaseChatModel):
                             google_api_key=key,
                             temperature=kwargs.get("temperature", 0.7),
                             convert_system_message_to_human=True,
+                            max_retries=0,
                         )
                         
                         # Handle vision for Gemini
@@ -169,7 +206,7 @@ class ResilientLLM(BaseChatModel):
                         res = llm._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
                         print(f"DEBUG: _generate returned successfully.")
                         self.current_key_idx = self.google_keys.index(key)
-                        return res
+                        return self._normalize_result(res)
                     except Exception as e:
                         import sys
                         exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -190,9 +227,11 @@ class ResilientLLM(BaseChatModel):
                     llm = ChatOpenAI(
                         model=current_model,
                         openai_api_key=os.getenv("OPENAI_API_KEY"),
-                        temperature=kwargs.get("temperature", 0.7)
+                        temperature=kwargs.get("temperature", 0.7),
+                        max_retries=0
                     )
-                    return llm._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
+                    res = llm._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
+                    return self._normalize_result(res)
                 except Exception as e:
                     if "quota" not in str(e).lower():
                         raise e
@@ -207,9 +246,22 @@ class ResilientLLM(BaseChatModel):
 
     def _get_fallback_model(self, failed_model: str) -> str:
         rotation = TEXT_MODELS
+        
+        # Helper to strip prefixes for matching
+        clean_model = failed_model.replace("models/", "").replace("gemini/", "")
+        
         try:
-            current_idx = rotation.index(failed_model)
-            return rotation[(current_idx + 1) % len(rotation)]
+            # Try to find exact match first
+            if failed_model in rotation:
+                current_idx = rotation.index(failed_model)
+                return rotation[(current_idx + 1) % len(rotation)]
+                
+            # Try to match without prefix
+            for i, model in enumerate(rotation):
+                if clean_model in model:
+                    return rotation[(i + 1) % len(rotation)]
+                    
+            return rotation[0]
         except ValueError:
             return rotation[0]
 

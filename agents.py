@@ -17,7 +17,7 @@ vision_architect = Agent(
     verbose=True,
     allow_delegation=False,
     max_iter=3,
-    max_execution_time=300
+    max_execution_time=1200
 )
 
 # 3. Senior Autonomous Full-Stack Engineer
@@ -30,7 +30,7 @@ developer = Agent(
     verbose=True,
     allow_delegation=False,
     max_iter=3,
-    max_execution_time=300
+    max_execution_time=1200
 )
 
 # 4. Autonomous Debugging Engineer
@@ -43,7 +43,7 @@ debug_engineer = Agent(
     verbose=True,
     allow_delegation=False,
     max_iter=3,
-    max_execution_time=300
+    max_execution_time=1200
 )
 
 # 5. Performance Optimization Specialist
@@ -56,7 +56,7 @@ optimization_specialist = Agent(
     verbose=True,
     allow_delegation=False,
     max_iter=3,
-    max_execution_time=300
+    max_execution_time=1200
 )
 
 # 7. Green AI & Sustainable Software Auditor
@@ -69,7 +69,7 @@ sustainability_auditor = Agent(
     verbose=True,
     allow_delegation=False,
     max_iter=3,
-    max_execution_time=300
+    max_execution_time=1200
 )
 
 # 6. Cognitive Load & DX Optimization Specialist
@@ -82,7 +82,7 @@ dx_specialist = Agent(
     verbose=True,
     allow_delegation=False,
     max_iter=3,
-    max_execution_time=300
+    max_execution_time=1200
 )
 
 # 15. Workflow Controller (Orchestrator)
@@ -95,5 +95,5 @@ workflow_controller = Agent(
     verbose=True,
     allow_delegation=False,
     max_iter=3,
-    max_execution_time=300
+    max_execution_time=1200
 )

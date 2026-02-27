@@ -1,5 +1,6 @@
 import os
 import time
+import shutil
 from crewai import Crew, Process
 from tasks import (
     vision_task, arch_task, dev_task, debug_task,
@@ -14,6 +15,10 @@ def run_aura_crew(image_path, user_desc, voice_reqs, model_choice=None):
     """
     Executes the 7-agent CrewAI flow and yields status updates.
     """
+    # Setup project
+    if os.path.exists("generated_project"):
+        shutil.rmtree("generated_project")
+    os.makedirs("generated_project")
     # Initialize the Crew
     if model_choice:
         from resilient_engine import get_resilient_llm
@@ -54,17 +59,26 @@ def run_aura_crew(image_path, user_desc, voice_reqs, model_choice=None):
         # In a real scenario, we'd parse the 'result' object which contains task outputs.
         # CrewAI 1.9.3 result object has tasks_output.
         
+        # Get files from generated_project
+        files_created = []
+        if os.path.exists("generated_project"):
+            for root, _, filenames in os.walk("generated_project"):
+                for filename in filenames:
+                    rel_path = os.path.relpath(os.path.join(root, filename), "generated_project")
+                    files_created.append(rel_path)
+
         # Mapping results to the UI expectation
         final_update = {
             "status": "Aura-Dev CrewAI Workflow Complete!",
             "progress": 100,
-            "final_result": str(aura_crew.tasks_output[2]), # dev_task
-            "vision": str(aura_crew.tasks_output[0]),
-            "blueprint": str(aura_crew.tasks_output[1]),
-            "debug": str(aura_crew.tasks_output[3]),
-            "optimization": str(aura_crew.tasks_output[4]),
-            "cog_report": str(aura_crew.tasks_output[5]),
-            "audit": str(aura_crew.tasks_output[6]) if len(aura_crew.tasks_output) > 6 else "Sustainability Audit Complete."
+            "final_result": str(result.tasks_output[2]), # dev_task
+            "files": files_created,
+            "vision": str(result.tasks_output[0]),
+            "blueprint": str(result.tasks_output[1]),
+            "debug": str(result.tasks_output[3]),
+            "optimization": str(result.tasks_output[4]),
+            "cog_report": str(result.tasks_output[5]),
+            "audit": str(result.tasks_output[6]) if len(result.tasks_output) > 6 else "Sustainability Audit Complete."
         }
         
         yield final_update
