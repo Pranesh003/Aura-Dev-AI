@@ -1,0 +1,10 @@
+streamlit
+fastapi
+uvicorn
+python-dotenv
+google-generativeai
+openai
+crewai
+Pillow
+pydantic
+python-multipart
