@@ -8,7 +8,8 @@ import {
   Folder, File, Play, Save, Cpu, Layers, HardDrive, 
   Terminal as TerminalIcon, Search, Settings, ShieldCheck, 
   ChevronRight, ChevronDown, Trash2, Upload, Box, CheckCircle2, 
-  Circle, PlusSquare, Layout, RefreshCcw, Zap
+  Circle, PlusSquare, Layout, RefreshCcw, Zap, FileText, Eye, 
+  Bug, Brain, Leaf
 } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8000';
@@ -101,8 +102,9 @@ function App() {
   const fetchStatus = async () => {
     try {
       const res = await axios.get(`${API_BASE}/api/status`);
+      const wasRunning = auraStatus.is_running;
       setAuraStatus(res.data);
-      if (res.data.is_running === false && auraStatus.is_running === true) {
+      if (wasRunning && res.data.is_running === false) {
         fetchFiles();
       }
     } catch (err) {}
@@ -219,8 +221,8 @@ function App() {
 
               {imageUrl && <img src={imageUrl} alt="preview" style={{ width: '100%', borderRadius: '12px', marginBottom: '20px', border: '1px solid var(--border)' }} />}
 
-              <div className="section-header" style={{ padding: 0, background: 'transparent', border: 'none', height: 'auto', marginBottom: '16px' }}>6-AGENT STATUS</div>
-              {Object.entries(auraStatus.phases).map(([name, status]) => (
+              <div className="section-header" style={{ padding: 0, background: 'transparent', border: 'none', height: 'auto', marginBottom: '16px' }}>7-AGENT STATUS</div>
+              {Object.entries(auraStatus.phases || {}).map(([name, status]) => (
                 <div key={name} className={`agent-row ${status === 'running' ? 'running' : ''}`}>
                   <div className={`agent-dot ${status}`}></div>
                   <div style={{ flex: 1 }}>
@@ -230,6 +232,59 @@ function App() {
                   {status === 'complete' && <CheckCircle2 size={18} color="var(--success)" />}
                 </div>
               ))}
+
+              {/* Solution & Reports — shown when run is complete and we have outputs */}
+              {!auraStatus.is_running && (auraStatus.vision || auraStatus.blueprint || (auraStatus.files_created && auraStatus.files_created.length) || auraStatus.debug_report || auraStatus.opt_report || auraStatus.cog_report || auraStatus.audit) && (
+                <div style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+                  <div className="section-header" style={{ padding: 0, background: 'transparent', border: 'none', height: 'auto', marginBottom: '12px' }}>SOLUTION & REPORTS</div>
+                  {auraStatus.vision && (
+                    <details className="result-details" style={{ marginBottom: '10px' }}>
+                      <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600' }}><Eye size={16} /> Vision</summary>
+                      <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '11px', maxHeight: '200px', overflow: 'auto', marginTop: '8px', padding: '10px', background: 'var(--bg-header)', borderRadius: '8px' }}>{auraStatus.vision}</pre>
+                    </details>
+                  )}
+                  {auraStatus.blueprint && (
+                    <details className="result-details" style={{ marginBottom: '10px' }}>
+                      <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600' }}><Layers size={16} /> Blueprint</summary>
+                      <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '11px', maxHeight: '200px', overflow: 'auto', marginTop: '8px', padding: '10px', background: 'var(--bg-header)', borderRadius: '8px' }}>{auraStatus.blueprint}</pre>
+                    </details>
+                  )}
+                  {auraStatus.files_created && auraStatus.files_created.length > 0 && (
+                    <details className="result-details" style={{ marginBottom: '10px' }}>
+                      <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600' }}><FileText size={16} /> Generated files ({auraStatus.files_created.length})</summary>
+                      <ul style={{ marginTop: '8px', paddingLeft: '18px', fontSize: '12px' }}>
+                        {auraStatus.files_created.map((f, i) => (
+                          <li key={i}>{f}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                  {auraStatus.debug_report && (
+                    <details className="result-details" style={{ marginBottom: '10px' }}>
+                      <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600' }}><Bug size={16} /> Debug report</summary>
+                      <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '11px', maxHeight: '200px', overflow: 'auto', marginTop: '8px', padding: '10px', background: 'var(--bg-header)', borderRadius: '8px' }}>{auraStatus.debug_report}</pre>
+                    </details>
+                  )}
+                  {auraStatus.opt_report && (
+                    <details className="result-details" style={{ marginBottom: '10px' }}>
+                      <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600' }}><Zap size={16} /> Optimization</summary>
+                      <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '11px', maxHeight: '200px', overflow: 'auto', marginTop: '8px', padding: '10px', background: 'var(--bg-header)', borderRadius: '8px' }}>{auraStatus.opt_report}</pre>
+                    </details>
+                  )}
+                  {auraStatus.cog_report && (
+                    <details className="result-details" style={{ marginBottom: '10px' }}>
+                      <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600' }}><Brain size={16} /> DX & cognitive audit</summary>
+                      <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '11px', maxHeight: '200px', overflow: 'auto', marginTop: '8px', padding: '10px', background: 'var(--bg-header)', borderRadius: '8px' }}>{auraStatus.cog_report}</pre>
+                    </details>
+                  )}
+                  {auraStatus.audit && (
+                    <details className="result-details" style={{ marginBottom: '10px' }}>
+                      <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600' }}><Leaf size={16} /> Sustainability audit</summary>
+                      <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '11px', maxHeight: '200px', overflow: 'auto', marginTop: '8px', padding: '10px', background: 'var(--bg-header)', borderRadius: '8px' }}>{auraStatus.audit}</pre>
+                    </details>
+                  )}
+                </div>
+              )}
             </div>
           ) : activeTab === 'automation' ? (
             <div>

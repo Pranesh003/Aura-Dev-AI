@@ -100,11 +100,11 @@ def delete_file(path: str):
         os.remove(full_path)
     return {"status": "success"}
 
-# State for the long-running Aura flow
+# State for the long-running Aura flow (includes solution outputs for frontend)
 aura_status = {
-    "status": "Idle", 
-    "progress": 0, 
-    "logs": [], 
+    "status": "Idle",
+    "progress": 0,
+    "logs": [],
     "is_running": False,
     "phases": {
         "Vision": "pending",
@@ -113,7 +113,15 @@ aura_status = {
         "Debug": "pending",
         "Optimization": "pending",
         "Sustainability": "pending"
-    }
+    },
+    "vision": None,
+    "blueprint": None,
+    "files_created": None,
+    "debug_report": None,
+    "opt_report": None,
+    "cog_report": None,
+    "audit": None,
+    "final_result": None,
 }
 
 @app.post("/api/run")
@@ -123,11 +131,19 @@ def start_aura_flow(req: RunRequest, background_tasks: BackgroundTasks):
         raise HTTPException(status_code=400, detail="Flow already running")
     
     aura_status = {
-        "status": "Initializing", 
-        "progress": 0, 
-        "logs": [], 
+        "status": "Initializing",
+        "progress": 0,
+        "logs": [],
         "is_running": True,
-        "phases": {p: "pending" for p in aura_status["phases"]}
+        "phases": {p: "pending" for p in aura_status["phases"]},
+        "vision": None,
+        "blueprint": None,
+        "files_created": None,
+        "debug_report": None,
+        "opt_report": None,
+        "cog_report": None,
+        "audit": None,
+        "final_result": None,
     }
     
     # Save image if provided
@@ -147,14 +163,43 @@ def run_agents(image_path, user_desc, voice_reqs, model_id):
     global aura_status
     try:
         for update in run_direct_flow(image_path, user_desc, voice_reqs, model_id):
+            # Handle phase failure
+            if "error" in update:
+                aura_status["status"] = update["error"]
+                aura_status["logs"].append(update["error"])
+                break
+
             aura_status["status"] = update.get("status", aura_status["status"])
             aura_status["progress"] = update.get("progress", aura_status["progress"])
-            
+
+            # Persist all solution outputs so frontend can display them
+            if "vision" in update:
+                aura_status["vision"] = update["vision"]
+            if "blueprint" in update:
+                aura_status["blueprint"] = update["blueprint"]
+            if "files" in update:
+                aura_status["files_created"] = update["files"]
+            if "debug" in update:
+                aura_status["debug_report"] = update["debug"]
+            if "optimization" in update:
+                aura_status["opt_report"] = update["optimization"]
+            if "cognitive_load" in update:
+                aura_status["cog_report"] = update["cognitive_load"]
+            if "audit" in update:
+                aura_status["audit"] = update["audit"]
+            if "final_result" in update:
+                aura_status["final_result"] = update["final_result"]
+            if "debug_report" in update:
+                aura_status["debug_report"] = update["debug_report"]
+            if "opt_report" in update:
+                aura_status["opt_report"] = update["opt_report"]
+            if "cog_report" in update:
+                aura_status["cog_report"] = update["cog_report"]
+
             # Map update status to phases
             for phase in aura_status["phases"]:
                 if phase in aura_status["status"]:
                     aura_status["phases"][phase] = "running"
-                    # Mark previous as complete
                     phases_list = list(aura_status["phases"].keys())
                     current_idx = phases_list.index(phase)
                     for i in range(current_idx):
@@ -162,13 +207,14 @@ def run_agents(image_path, user_desc, voice_reqs, model_id):
 
             if "status" in update:
                 aura_status["logs"].append(update["status"])
-        
-        # Mark all as complete at end
-        for phase in aura_status["phases"]:
-            aura_status["phases"][phase] = "complete"
-            
+
+        # Mark all phases complete at end (unless we broke on error)
+        if aura_status["is_running"]:
+            for phase in aura_status["phases"]:
+                aura_status["phases"][phase] = "complete"
     except Exception as e:
         aura_status["status"] = f"Error: {str(e)}"
+        aura_status["logs"].append(f"Error: {str(e)}")
     finally:
         aura_status["is_running"] = False
 
