@@ -19,14 +19,16 @@ with st.sidebar:
         "Select AI Provider & Model",
         [
             "openrouter/qwen/qwen3.5-35b-a3b",
+            "gemini/gemini-3-flash-preview",
+            "gemini/gemini-3.1-pro-preview",
             "gemini/gemini-2.0-flash",
             "gemini/gemini-flash-latest",
             "gemini/gemini-pro-latest",
             "openai/gpt-4o",
             "openai/gpt-4o-mini"
         ],
-        index=0,
-        help="Gemini 2.0 Flash is recommended for speed and quota."
+        index=1,
+        help="Gemini 3 Flash Preview & 3.1 Pro Preview are now available as primary engines."
     )
     st.info("💎 **High Resilience**: If your choice hits a quota limit, the system will **automatically rotate** through available models to finish your project.")
     st.warning("⚠️ 7-Agent Core Dominion: Robust Error Recovery Active.")
