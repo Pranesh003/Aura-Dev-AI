@@ -5,6 +5,7 @@ import os
 import shutil
 from typing import List, Dict, Optional
 import sys
+import time
 
 # Add parent dir to path so we can import direct_flow
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -100,7 +101,14 @@ def delete_file(path: str):
         os.remove(full_path)
     return {"status": "success"}
 
-# State for the long-running Aura flow (includes solution outputs for frontend)
+#
+# State for the long-running Aura flow
+# Includes:
+# - overall status/progress
+# - per-phase status
+# - solution outputs
+# - simple timing + error info so the frontend can show a live timer
+#
 aura_status = {
     "status": "Idle",
     "progress": 0,
@@ -112,8 +120,9 @@ aura_status = {
         "Developer": "pending",
         "Debug": "pending",
         "Optimization": "pending",
-        "Sustainability": "pending"
+        "Sustainability": "pending",
     },
+    # Solution outputs
     "vision": None,
     "blueprint": None,
     "files_created": None,
@@ -122,6 +131,12 @@ aura_status = {
     "cog_report": None,
     "audit": None,
     "final_result": None,
+    # Timing / diagnostics
+    "started_at": None,          # epoch seconds when run started
+    "updated_at": None,          # last status update time
+    "current_phase": None,       # simple string like "Vision", "Developer", ...
+    "phase_timings": {},         # { phase: { "started_at": ts, "ended_at": ts } }
+    "errors": [],                # list of { "message": str, "phase": Optional[str], "time": float }
 }
 
 @app.post("/api/run")
@@ -130,6 +145,7 @@ def start_aura_flow(req: RunRequest, background_tasks: BackgroundTasks):
     if aura_status["is_running"]:
         raise HTTPException(status_code=400, detail="Flow already running")
     
+    now = time.time()
     aura_status = {
         "status": "Initializing",
         "progress": 0,
@@ -144,6 +160,11 @@ def start_aura_flow(req: RunRequest, background_tasks: BackgroundTasks):
         "cog_report": None,
         "audit": None,
         "final_result": None,
+        "started_at": now,
+        "updated_at": now,
+        "current_phase": None,
+        "phase_timings": {},
+        "errors": [],
     }
     
     # Save image if provided
@@ -163,14 +184,26 @@ def run_agents(image_path, user_desc, voice_reqs, model_id):
     global aura_status
     try:
         for update in run_direct_flow(image_path, user_desc, voice_reqs, model_id):
+            now = time.time()
+
             # Handle phase failure
             if "error" in update:
-                aura_status["status"] = update["error"]
-                aura_status["logs"].append(update["error"])
+                message = update["error"]
+                aura_status["status"] = message
+                aura_status["logs"].append(message)
+                aura_status["errors"].append(
+                    {
+                        "message": message,
+                        "phase": aura_status.get("current_phase"),
+                        "time": now,
+                    }
+                )
+                aura_status["updated_at"] = now
                 break
 
             aura_status["status"] = update.get("status", aura_status["status"])
             aura_status["progress"] = update.get("progress", aura_status["progress"])
+            aura_status["updated_at"] = now
 
             # Persist all solution outputs so frontend can display them
             if "vision" in update:
@@ -196,25 +229,57 @@ def run_agents(image_path, user_desc, voice_reqs, model_id):
             if "cog_report" in update:
                 aura_status["cog_report"] = update["cog_report"]
 
-            # Map update status to phases
+            # Map update status to phases + track simple timings
             for phase in aura_status["phases"]:
                 if phase in aura_status["status"]:
+                    aura_status["current_phase"] = phase
                     aura_status["phases"][phase] = "running"
+
+                    # Initialize phase start time if first time we see it
+                    if phase not in aura_status["phase_timings"]:
+                        aura_status["phase_timings"][phase] = {
+                            "started_at": now,
+                            "ended_at": None,
+                        }
+
+                    # Mark all previous phases as complete and give them an end time
                     phases_list = list(aura_status["phases"].keys())
                     current_idx = phases_list.index(phase)
                     for i in range(current_idx):
-                        aura_status["phases"][phases_list[i]] = "complete"
+                        prev_phase = phases_list[i]
+                        aura_status["phases"][prev_phase] = "complete"
+                        if prev_phase not in aura_status["phase_timings"]:
+                            aura_status["phase_timings"][prev_phase] = {
+                                "started_at": aura_status.get("started_at", now),
+                                "ended_at": now,
+                            }
+                        else:
+                            aura_status["phase_timings"][prev_phase]["ended_at"] = now
 
             if "status" in update:
                 aura_status["logs"].append(update["status"])
+                aura_status["updated_at"] = now
 
         # Mark all phases complete at end (unless we broke on error)
         if aura_status["is_running"]:
             for phase in aura_status["phases"]:
                 aura_status["phases"][phase] = "complete"
+                if phase in aura_status["phase_timings"]:
+                    if aura_status["phase_timings"][phase]["ended_at"] is None:
+                        aura_status["phase_timings"][phase]["ended_at"] = time.time()
     except Exception as e:
-        aura_status["status"] = f"Error: {str(e)}"
-        aura_status["logs"].append(f"Error: {str(e)}")
+        now = time.time()
+        msg = f"Error: {str(e)}"
+        aura_status["status"] = msg
+        aura_status["logs"].append(msg)
+        aura_status["errors"].append(
+            {
+                "message": msg,
+                "phase": aura_status.get("current_phase"),
+                "time": now,
+            }
+        )
+        aura_status["updated_at"] = now
     finally:
         aura_status["is_running"] = False
 

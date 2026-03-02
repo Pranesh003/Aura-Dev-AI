@@ -57,8 +57,16 @@ function App() {
   const [content, setContent] = useState('');
   const [openPaths, setOpenPaths] = useState({ '.': true }); // Root open by default
   const [auraStatus, setAuraStatus] = useState({ 
-    status: 'Idle', progress: 0, is_running: false, logs: [], 
-    phases: { Vision: 'pending', Architect: 'pending', Developer: 'pending', Debug: 'pending', Optimization: 'pending', Sustainability: 'pending' } 
+    status: 'Idle',
+    progress: 0,
+    is_running: false,
+    logs: [],
+    phases: { Vision: 'pending', Architect: 'pending', Developer: 'pending', Debug: 'pending', Optimization: 'pending', Sustainability: 'pending' },
+    started_at: null,
+    updated_at: null,
+    current_phase: null,
+    phase_timings: {},
+    errors: [],
   });
   const [userDesc, setUserDesc] = useState('');
   const [voiceReqs, setVoiceReqs] = useState('');
@@ -74,6 +82,15 @@ function App() {
     const interval = setInterval(fetchStatus, 2000);
     return () => clearInterval(interval);
   }, []);
+
+  const formatDuration = (seconds) => {
+    if (!seconds || seconds < 0) return '0s';
+    const s = Math.floor(seconds);
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    if (m === 0) return `${rem}s`;
+    return `${m}m ${rem}s`;
+  };
 
   const initTerminal = () => {
     if (!terminalRef.current || xterm.current) return;
@@ -222,16 +239,60 @@ function App() {
               {imageUrl && <img src={imageUrl} alt="preview" style={{ width: '100%', borderRadius: '12px', marginBottom: '20px', border: '1px solid var(--border)' }} />}
 
               <div className="section-header" style={{ padding: 0, background: 'transparent', border: 'none', height: 'auto', marginBottom: '16px' }}>7-AGENT STATUS</div>
+              
+              {/* Overall timer + current phase */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                <span>
+                  {auraStatus.is_running
+                    ? `Running${auraStatus.current_phase ? ` · ${auraStatus.current_phase} phase` : ''}`
+                    : 'Idle'}
+                </span>
+                <span>
+                  {auraStatus.started_at
+                    ? `Elapsed: ${formatDuration(
+                        (auraStatus.is_running ? Date.now() / 1000 : auraStatus.updated_at || auraStatus.started_at) -
+                        auraStatus.started_at
+                      )}`
+                    : 'Elapsed: 0s'}
+                </span>
+              </div>
+
               {Object.entries(auraStatus.phases || {}).map(([name, status]) => (
                 <div key={name} className={`agent-row ${status === 'running' ? 'running' : ''}`}>
                   <div className={`agent-dot ${status}`}></div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '14px', fontWeight: '600' }}>{name} Agent</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{status.toUpperCase()}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                      {status.toUpperCase()}
+                      {auraStatus.phase_timings && auraStatus.phase_timings[name] && (
+                        <>
+                          {' · '}
+                          {formatDuration(
+                            ((auraStatus.phase_timings[name].ended_at || (auraStatus.updated_at || auraStatus.started_at || 0)) -
+                              auraStatus.phase_timings[name].started_at) || 0
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                   {status === 'complete' && <CheckCircle2 size={18} color="var(--success)" />}
                 </div>
               ))}
+
+              {/* Errors, if any */}
+              {auraStatus.errors && auraStatus.errors.length > 0 && (
+                <div style={{ marginTop: '10px', padding: '8px 10px', borderRadius: '8px', border: '1px solid #b91c1c', background: 'rgba(239,68,68,0.08)' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Recent errors</div>
+                  <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px' }}>
+                    {auraStatus.errors.slice(-3).map((e, idx) => (
+                      <li key={idx}>
+                        {e.phase ? `[${e.phase}] ` : ''}
+                        {e.message}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Solution & Reports — shown when run is complete and we have outputs */}
               {!auraStatus.is_running && (auraStatus.vision || auraStatus.blueprint || (auraStatus.files_created && auraStatus.files_created.length) || auraStatus.debug_report || auraStatus.opt_report || auraStatus.cog_report || auraStatus.audit) && (
@@ -375,9 +436,10 @@ function App() {
         <div className="terminal-panel">
           <div className="terminal-header">
              <span>TERMINAL › {auraStatus.status || 'READY'}</span>
-             <div style={{ display: 'flex', gap: '15px' }}>
-                <span onClick={clearTerminal} style={{ cursor: 'pointer' }}>CLEAR</span>
+             <div style={{ display: 'flex', gap: '15px', alignItems: 'center', fontSize: '11px' }}>
+                <span>{auraStatus.current_phase ? `Phase: ${auraStatus.current_phase}` : ''}</span>
                 <span style={{ color: 'var(--accent)' }}>{auraStatus.progress}%</span>
+                <span onClick={clearTerminal} style={{ cursor: 'pointer' }}>CLEAR</span>
              </div>
           </div>
           <div style={{ flex: 1, padding: '12px' }} ref={terminalRef}></div>

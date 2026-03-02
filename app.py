@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import time
 from dotenv import load_dotenv
 
 # MUST BE AT THE TOP
@@ -41,6 +42,16 @@ voice_requirements = st.text_area("Voice/Functional Requirements (What should th
                                  placeholder="e.g., A low-bandwidth farm tracking app that works offline...")
 user_desc = st.text_input("Project Objective (Short name/goal)")
 
+# Helper to pretty-print durations
+def format_duration(seconds: float) -> str:
+    if not seconds or seconds < 0:
+        return "0s"
+    s = int(seconds)
+    m, rem = divmod(s, 60)
+    if m == 0:
+        return f"{rem}s"
+    return f"{m}m {rem}s"
+
 if st.button("🚀 Run Aura-Dev (7-Agent Core Mode)"):
     if uploaded_file and user_desc:
         temp_image_path = "temp_sketch.png"
@@ -48,48 +59,112 @@ if st.button("🚀 Run Aura-Dev (7-Agent Core Mode)"):
             f.write(uploaded_file.getbuffer())
 
         from crew_flow import run_aura_crew
-        
+
         progress_bar = st.progress(0)
         status_text = st.empty()
-        
+        meta_text = st.empty()
+
+        # Track run start time and a simple in-memory log of updates
+        start_time = time.time()
+        phase_status = {
+            "Vision": "pending",
+            "Architecture": "pending",
+            "Developer": "pending",
+            "Debug": "pending",
+            "Optimization": "pending",
+            "DX": "pending",
+            "Sustainability": "pending",
+        }
+        run_log = []
+
         with st.status("Aura-Dev: Orchestrating 7-Agent Core Intelligence (CrewAI)...", expanded=True) as status:
             # Use specific model name for direct SDK
             vision_model_id = model_choice.split("/")[-1]
             
             for update in run_aura_crew(temp_image_path, user_desc, voice_requirements, model_choice):
                 if "error" in update:
-                    st.error(update["error"])
+                    err = update["error"]
+                    st.error(err)
+                    run_log.append(f"ERROR: {err}")
+                    elapsed = time.time() - start_time
+                    meta_text.markdown(f"**Elapsed:** {format_duration(elapsed)} • **Status:** Error")
                     break
                 
-                status_text.text(update["status"])
+                # Core status + progress
+                status_msg = update["status"]
+                status_text.text(status_msg)
                 progress_bar.progress(update["progress"])
+
+                # Update timer + simple phase view
+                elapsed = time.time() - start_time
+
+                if "vision" in update:
+                    phase_status["Vision"] = "complete"
+                if "blueprint" in update:
+                    phase_status["Architecture"] = "complete"
+                if "files" in update:
+                    phase_status["Developer"] = "complete"
+                if "debug" in update:
+                    phase_status["Debug"] = "complete"
+                if "optimization" in update:
+                    phase_status["Optimization"] = "complete"
+                if "cog_report" in update:
+                    phase_status["DX"] = "complete"
+                if "audit" in update:
+                    phase_status["Sustainability"] = "complete"
+
+                current_phase = ", ".join(
+                    [name for name, state in phase_status.items() if state == "pending" or state == "running"]
+                ) or "Finalizing"
+
+                meta_text.markdown(
+                    f"**Elapsed:** {format_duration(elapsed)} • "
+                    f"**Progress:** {update.get('progress', 0)}% • "
+                    f"**Phase(s):** {current_phase}"
+                )
+
+                # Append to in-memory log
+                run_log.append(f"{format_duration(elapsed)} • {status_msg}")
                 
                 if "vision" in update:
                     st.session_state.vision = update["vision"]
+                    phase_status["Vision"] = "complete"
                     st.write("✅ Vision Agent finished.")
 
                 if "blueprint" in update:
                     st.session_state.blueprint = update["blueprint"]
+                    phase_status["Architecture"] = "complete"
                     st.write("✅ Architect Agent finished.")
                 
                 if "files" in update:
+                    phase_status["Developer"] = "complete"
                     st.write(f"✅ Lead Developer created {len(update['files'])} files.")
                 
                 if "debug" in update:
                     st.session_state.debug_report = update["debug"]
+                    phase_status["Debug"] = "complete"
                     st.write("✅ Debug Agent finished.")
 
                 if "optimization" in update:
                     st.session_state.opt_report = update["optimization"]
+                    phase_status["Optimization"] = "complete"
                     st.write("✅ Optimization Agent finished.")
 
                 if "audit" in update:
                     st.session_state.audit = update["audit"]
                     st.session_state.cog_report = update.get("cog_report", "No cognitive audit available.")
                     st.session_state.result = update["final_result"]
+                    phase_status["DX"] = "complete"
+                    phase_status["Sustainability"] = "complete"
                     st.write("✅ Sustainability Agent finished.")
                     st.success("7-Agent Workflow Completed!")
                     status.update(label="Workflow Complete!", state="complete")
+
+            # After loop, if we have any log lines, show a compact execution log
+            if run_log:
+                with st.expander("📜 Execution Timeline (status & timing)"):
+                    for line in run_log:
+                        st.write(f"- {line}")
     else:
         st.error("Please provide both a sketch and a description.")
 
