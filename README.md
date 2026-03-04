@@ -36,7 +36,7 @@ flowchart TD
         LLM["Google Gemini\nOpenRouter\nOpenAI"]:::engine
     end
 
-    Final((["📁 Final Generated\nProject Workflow"]:::result))
+    Final(["📁 Final Generated\nProject Workflow"]):::result
 
     %% Connections
     User -.->|Upload via UI/IDE| VA
