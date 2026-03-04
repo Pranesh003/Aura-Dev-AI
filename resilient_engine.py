@@ -71,9 +71,10 @@ class ResilientLLM(BaseChatModel):
     Rotates through 8 Google API keys and falls back across models.
     """
     model_name: str = "openrouter/qwen/qwen3.5-35b-a3b"
-    current_key_idx: int = 0
     google_keys: List[str] = []
     stop: Optional[List[str]] = None
+    status_obj: Any = None
+    current_key_idx: int = 0
     
     def __init__(self, model_name: str = "openrouter/qwen/qwen3.5-35b-a3b", **kwargs):
         super().__init__(**kwargs)
@@ -152,7 +153,7 @@ class ResilientLLM(BaseChatModel):
         for key in ["available_functions", "from_task", "from_agent", "response_model", "callbacks"]:
             kwargs.pop(key, None)
 
-        while attempts < 8:
+        while attempts < 3: # Reduced from 8
             is_openai = "gpt" in current_model.lower()
             is_openrouter = "openrouter" in current_model.lower() or "qwen" in current_model.lower()
             
@@ -216,10 +217,14 @@ class ResilientLLM(BaseChatModel):
                         if any(x in err_msg for x in ["404", "not found", "not supported", "not exist"]):
                             break # Skip keys for this model
                         if any(x in err_msg for x in ["429", "resource_exhausted", "quota", "rate limit reached"]):
+                            msg = f"🔄 Quota hit for key {k_idx}. Rotating to next key..."
+                            print(f"DEBUG: {msg}")
                             continue # Try next key
                         # Handle transient 500s/503s
                         if any(x in err_msg for x in ["500", "503", "service unavailable", "internal error"]):
-                            time.sleep(5)
+                            msg = f"⏳ Server error. Quick retry with next key..."
+                            print(f"DEBUG: {msg}")
+                            time.sleep(1) # Reduced from 5
                             continue
                         raise e
             else:
@@ -240,7 +245,8 @@ class ResilientLLM(BaseChatModel):
             current_model = self._get_fallback_model(current_model)
             self.current_key_idx = 0
             attempts += 1
-            time.sleep(3)
+            print(f"DEBUG: Falling back to model {current_model} (Attempt {attempts}/3)")
+            time.sleep(1) # Reduced from 3
 
         raise RuntimeError("CRITICAL FAILURE: Complete resource exhaustion after exhaustive rotation.")
 

@@ -29,7 +29,7 @@ from agents import (
 from memory_store import append_memory
 
 
-def run_aura_crew(image_path, user_desc, voice_reqs, model_choice=None):
+def run_aura_crew(image_path, user_desc, voice_reqs, model_choice=None, status_obj=None):
     """
     Executes the multi-agent Aura-Dev flow and yields status updates.
     This is the high-level, collaborative society of agents pipeline.
@@ -57,6 +57,14 @@ def run_aura_crew(image_path, user_desc, voice_reqs, model_choice=None):
             review_agent,
         ]:
             agent.llm = new_llm
+
+    def task_callback(task_output):
+        """Callback to store task completion status."""
+        task_name = task_output.description.split('\n')[0][:50]
+        msg = f"✅ Completed: {task_name}"
+        print(f"DEBUG: {msg}")
+        if status_obj:
+            status_obj.write(msg)
 
     aura_crew = Crew(
         agents=[
@@ -86,6 +94,7 @@ def run_aura_crew(image_path, user_desc, voice_reqs, model_choice=None):
         ],
         process=Process.sequential,
         verbose=True,
+        task_callback=task_callback
     )
 
     inputs = {

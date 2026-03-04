@@ -114,11 +114,12 @@ dx_task = Task(
 # 8. Sustainability Audit Task
 sustainability_task = Task(
     description=(
-        "Perform a final Green-AI audit of the entire project lifecycle. Evaluate energy usage, "
-        "inclusivity, and operational footprint. Recommend practical changes to reduce carbon "
-        "impact and improve accessibility."
+        "Perform a final but concise Green-AI audit of the project. Focus on the most material "
+        "aspects of energy usage, inclusivity, and operational footprint, based on the generated "
+        "code and architecture (do NOT simulate entire lifecycles or extremely long reports). "
+        "Recommend 5–10 practical, high-impact changes to reduce carbon impact and improve accessibility."
     ),
-    expected_output="Green-AI Audit score and sustainability report.",
+    expected_output="A focused Green-AI Audit summary (max ~700 words) and a ranked list of concrete recommendations.",
     agent=sustainability_auditor,
     context=[dev_task, opt_task],
 )

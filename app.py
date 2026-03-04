@@ -81,7 +81,7 @@ if st.button("🚀 Run Aura-Dev (7-Agent Core Mode)"):
             # Use specific model name for direct SDK
             vision_model_id = model_choice.split("/")[-1]
             
-            for update in run_aura_crew(temp_image_path, user_desc, voice_requirements, model_choice):
+            for update in run_aura_crew(temp_image_path, user_desc, voice_requirements, model_choice, status_obj=status):
                 if "error" in update:
                     err = update["error"]
                     st.error(err)

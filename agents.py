@@ -110,14 +110,14 @@ dx_specialist = Agent(
 # 7. Green AI & Sustainable Software Auditor
 sustainability_auditor = Agent(
     role="Green AI & Sustainable Software Auditor",
-    goal="Evaluate compute efficiency, carbon risk, and inclusivity.",
-    backstory="Sustainability engineer focused on minimizing the environmental impact of AI.",
+    goal="Evaluate compute efficiency, carbon risk, and inclusivity with concise, actionable guidance.",
+    backstory="Sustainability engineer focused on minimizing the environmental impact of AI without excessive token or time usage.",
     llm=resilient_llm,
     tools=[tools.list_generated_files, tools.write_memory, tools.read_memory],
     verbose=True,
     allow_delegation=False,
     max_iter=3,
-    max_execution_time=1200,
+    max_execution_time=2400,
 )
 
 # 8. Documentation & Knowledge Engineer
