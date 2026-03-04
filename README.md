@@ -3,6 +3,50 @@
 Aura-Dev AI is a multi‑agent development copilot that automates large parts of the software lifecycle.  
 It uses **CrewAI** agents orchestrated over a **resilient LLM engine** (Google Gemini, OpenRouter, OpenAI) to go from sketch → architecture → code → self‑healing → optimization → audits.
 
+```mermaid
+flowchart TD
+    %% Styling Definitions
+    classDef input fill:#4f46e5,stroke:#3730a3,stroke-width:2px,color:#fff;
+    classDef agent fill:#0ea5e9,stroke:#0284c7,stroke-width:2px,color:#fff;
+    classDef engine fill:#1e293b,stroke:#0f172a,stroke-width:2px,color:#fff;
+    classDef result fill:#10b981,stroke:#059669,stroke-width:2px,color:#fff;
+
+    %% Nodes
+    User(("👤 User Input\n(Sketch, Text, or Code)")):::input
+
+    subgraph Workflow ["🤖 Multi-Agent Workflow (CrewAI)"]
+        direction TB
+        VA{"👁️ Vision Agent"}:::agent
+        AA["🏗️ Architect Agent"]:::agent
+        DA["💻 Developer Agent"]:::agent
+        DB["🐛 Debug Agent"]:::agent
+        OA["⚡ Optimization Agent"]:::agent
+        DX["🧑‍💻 DX Agent"]:::agent
+        SA["🍃 Sustainability Agent"]:::agent
+
+        VA -->|Visual Context| AA
+        AA -->|System Architecture| DA
+        DA -->|Source Code| DB
+        DB -->|Healed Code| OA
+        OA -->|Performant Code| DX
+        DX -->|DX Report| SA
+    end
+
+    subgraph Resilient ["⚙️ Resilient Engine Core"]
+        LLM["Google Gemini\nOpenRouter\nOpenAI"]:::engine
+    end
+
+    Final((["📁 Final Generated\nProject Workflow"]:::result))
+
+    %% Connections
+    User -.->|Upload via UI/IDE| VA
+
+    %% Engine Dependencies
+    Workflow -.- LLM
+
+    SA -->|Green AI Audit & Code| Final
+```
+
 ## 🌟 Key Features
 
 - Multi-agent orchestration: Vision, Architect, Developer, Debug, Optimization, DX, and Sustainability agents.
