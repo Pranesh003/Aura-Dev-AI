@@ -10,7 +10,7 @@ def test_isolated_crew():
         llm = get_resilient_llm()
         tools = DevelopmentTools()
         
-        # Simple agent with the resilient LLM
+        
         agent = Agent(
             role='Test Agent',
             goal='Write a simple summary to a file.',
