@@ -56,6 +56,46 @@ flowchart TD
   - Streamlit dashboard (`app.py`) for quick experiments.
   - Vite + React IDE (`frontend/`) talking to a FastAPI backend (`backend/`).
 
+## TRL LEVEL
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0f172a', 'edgeLabelBackground':'#1e293b', 'tertiaryColor': '#1e293b'}}}%%
+flowchart TD
+    %% Base styling
+    classDef default fill:#334155,stroke:#94a3b8,stroke-width:2px,color:#f8fafc;
+    classDef current fill:#10b981,stroke:#047857,stroke-width:3px,color:#fff;
+    classDef future fill:#1e293b,stroke:#475569,stroke-width:2px,color:#94a3b8,stroke-dasharray: 5 5;
+
+    %% Nodes
+    TRL1["TRL 1: Basic principles observed"]:::default
+    TRL2["TRL 2: Technology concept formulated"]:::default
+    TRL3["TRL 3: Experimental proof of concept"]:::default
+    TRL4["TRL 4: Technology validated in lab"]:::default
+    
+    TRL5["TRL 5: Technology validated in relevant environment\n(Core Multi-Agent LLM System + UI Prototype)"]:::current
+    
+    TRL6["TRL 6: Technology demonstrated in relevant environment"]:::future
+    TRL7["TRL 7: System prototype demonstration in operational environment"]:::future
+    TRL8["TRL 8: System complete and qualified"]:::future
+    TRL9["TRL 9: Actual system proven in operational environment"]:::future
+
+    TRL1 --> TRL2
+    TRL2 --> TRL3
+    TRL3 --> TRL4
+    TRL4 --> TRL5
+    TRL5 -.-> TRL6
+    TRL6 -.-> TRL7
+    TRL7 -.-> TRL8
+    TRL8 -.-> TRL9
+
+    %% Annotations
+    subgraph Current Status: Aura-Dev AI
+        direction LR
+        NOTE[/"Current state: Functional prototypes available via Streamlit and React IDE. Resilient LLM routing (Gemini/OpenAI/Anthropic) implemented."/]
+        TRL5 --- NOTE
+    end
+```
+
 ## 🏗️ Project Structure
 
 ```text
