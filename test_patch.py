@@ -3,13 +3,13 @@ from resilient_engine import StreamWrapper
 
 def test_stream_wrapper():
     print("Testing StreamWrapper...")
-    # Wrap a mock object to test
+
     class MockStream:
         def write(self, data):
             print(f"Mock wrote: {data.strip()}")
         def flush(self):
             print("Mock flushed.")
-            raise OSError(22, "Invalid argument") # Simulate the error
+            raise OSError(22, "Invalid argument")
             
     wrapped = StreamWrapper(MockStream())
     
