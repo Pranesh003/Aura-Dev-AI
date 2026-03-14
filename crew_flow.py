@@ -28,7 +28,6 @@ from agents import (
 )
 from memory_store import append_memory
 
-
 def run_aura_crew(image_path, user_desc, voice_reqs, model_choice=None, status_obj=None):
     """
     Executes the multi-agent Aura-Dev flow and yields status updates.
