@@ -34,6 +34,31 @@ def run_aura_background(job_id, user_id, image_path, user_desc, voice_reqs, mode
         for update in run_direct_flow(image_path, user_desc, voice_reqs, model_id, job_id=job_id):
             for k, v in update.items():
                 jobs[job_id][k] = v
+                
+        # Compress and Upload to Supabase Storage
+        job_dir = os.path.join(PROJECT_ROOT, "jobs", job_id, "generated_project")
+        if os.path.exists(job_dir):
+            temp_zip = os.path.join(tempfile.gettempdir(), f"aura_{job_id}")
+            shutil.make_archive(temp_zip, 'zip', job_dir)
+            
+            url = os.environ.get("SUPABASE_URL")
+            key = os.environ.get("SUPABASE_KEY")
+            if url and key:
+                from supabase import create_client
+                supabase_client = create_client(url, key)
+                # Ensure bucket exists
+                try: supabase_client.storage.create_bucket("artifacts")
+                except Exception: pass
+                
+                with open(f"{temp_zip}.zip", "rb") as f:
+                    supabase_client.storage.from_("artifacts").upload(
+                        path=f"{job_id}.zip",
+                        file=f.read(),
+                        file_options={"content-type": "application/zip", "upsert": "true"}
+                    )
+                # Clean up local un-tracked HDD state
+                shutil.rmtree(os.path.join(PROJECT_ROOT, "jobs", job_id), ignore_errors=True)
+
         crud.update_project_status(db, job_id, "Completed")
     except Exception as e:
         jobs[job_id]["error"] = str(e)
@@ -102,15 +127,32 @@ def download_project(
     if not any(p.id == job_id for p in project):
         raise HTTPException(status_code=403, detail="You do not own this project.")
     
-    job_dir = os.path.join(PROJECT_ROOT, "jobs", job_id, "generated_project")
-    if not os.path.exists(job_dir):
-        raise HTTPException(status_code=404, detail="Code project directory has expired or does not exist.")
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_KEY")
+    if not (url and key):
+        raise HTTPException(status_code=500, detail="Supabase Storage not configured.")
         
-    temp_zip = os.path.join(tempfile.gettempdir(), f"aura_{job_id}")
-    shutil.make_archive(temp_zip, 'zip', job_dir)
-    
-    return FileResponse(
-        f"{temp_zip}.zip", 
-        media_type='application/zip', 
-        filename=f"AuraProject_{job_id[:8]}.zip"
-    )
+    try:
+        from supabase import create_client
+        supabase_client = create_client(url, key)
+        file_data = supabase_client.storage.from_("artifacts").download(f"{job_id}.zip")
+        
+        temp_zip = os.path.join(tempfile.gettempdir(), f"download_{job_id}.zip")
+        with open(temp_zip, "wb") as f:
+            f.write(file_data)
+            
+        return FileResponse(
+            temp_zip, 
+            media_type='application/zip', 
+            filename=f"AuraProject_{job_id[:8]}.zip"
+        )
+    except Exception as e:
+        print("Storage Download Error:", e)
+        # Fallback to local disk if running old version
+        job_dir = os.path.join(PROJECT_ROOT, "jobs", job_id, "generated_project")
+        if not os.path.exists(job_dir):
+            raise HTTPException(status_code=404, detail="Project archive could not be generated and is missing from Cloud Storage.")
+            
+        temp_zip = os.path.join(tempfile.gettempdir(), f"aura_{job_id}")
+        shutil.make_archive(temp_zip, 'zip', job_dir)
+        return FileResponse(f"{temp_zip}.zip", media_type='application/zip', filename=f"AuraProject_{job_id[:8]}.zip")

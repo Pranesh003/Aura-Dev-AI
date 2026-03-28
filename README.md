@@ -1,7 +1,51 @@
 # Aura-Dev AI 🚀
 
-Aura-Dev AI is a multi‑agent development copilot that automates large parts of the software lifecycle.  
-It uses **CrewAI** agents orchestrated over a **resilient LLM engine** (Google Gemini, OpenRouter, OpenAI) to go from sketch → architecture → code → self‑healing → optimization → audits.
+[![TRL](https://img.shields.io/badge/TRL-6%20(SaaS%20Ready)-10b981?style=for-the-badge)](https://en.wikipedia.org/wiki/Technology_readiness_level)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-Frontend-61DAFB?style=for-the-badge)](https://react.dev)
+[![Supabase](https://img.shields.io/badge/Supabase-SaaS%20Storage-24b47e?style=for-the-badge)](https://supabase.com)
+
+Aura-Dev AI is an elite **Autonomous Multi-Model Agentic Software Engineering System** designed to automate large parts of the software lifecycle, moving from abstract visual requirements to complete generation.
+
+It leverages a powerful **7-Agent CrewAI Orchestration** over a **Resilient LLM Engine** (Google Gemini, OpenRouter, OpenAI) to go from sketch → architecture → code → self‑healing → optimization → cognitive audits → sustainability reports.
+
+---
+
+## 🌟 Mission & Core Principles
+
+**Mission:** To significantly reduce cognitive load, development time, and resource consumption by transforming abstract requirements into reliable, maintainable, and inclusive software solutions.
+
+**Core Principles:**
+- **Modular Reasoning:** Decoupled architect, developer, and auditor flows for clear logic progression.
+- **Low-Dependency Engineering:** Built with minimal external dependencies to ensure long-term stability.
+- **Self-Validation:** Automatic quota detection, fallback mechanisms, and robust error handling.
+- **Developer-Friendly:** Structured file generation with precise parsing and an interactive Vite+React UI.
+- **Sustainability:** Optimized API usage and Green-AI computing focus.
+- **Inclusivity:** Scaled efficiently ensuring execution even on low-bandwidth setups.
+
+---
+
+## 🤖 The 7-Agent Workflow Team
+
+1. **👁️ Lead Multimodal Vision Architect (Vision Agent)**
+   Specialized in converting abstract visual sketches (hand-drawn/Figma) into deep-reasoning engineering blueprints.
+2. **🏗️ System Architect (Architect Agent)**
+   Expands vision context into a multi-layer modular architecture design.
+3. **💻 Senior Full-Stack Developer (Developer Agent)**
+   Converts blueprints into production-ready, PEP8-compliant, and secure source code.
+4. **🐛 Autonomous Debugging Engineer (Debug Agent)**
+   Enhances productivity by detecting and healing syntax errors, missing imports, and logic bottlenecks directly in the newly generated code.
+5. **⚡ Performance Optimization Specialist (Optimization Agent)**
+   Identifies heavy dependencies, reduces runtime overhead, and refactors logic down to high-performance minimalist alternatives.
+6. **🧑‍💻 DX & Cognitive Load Expert (DX Agent)**
+   Analyzes interaction patterns to natively simplify the system, offering a pristine developer experience.
+7. **🍃 Green AI & Sustainability Auditor (Sustainability Agent)**
+   Evaluates system efficiency, carbon footprint algorithms, and inclusiveness to ensure absolute "Hackathon Winning Edge" delivery.
+
+---
+
+## 🏗️ Architecture & Execution Flow
 
 ```mermaid
 flowchart TD
@@ -9,10 +53,12 @@ flowchart TD
     classDef input fill:#4f46e5,stroke:#3730a3,stroke-width:2px,color:#fff;
     classDef agent fill:#0ea5e9,stroke:#0284c7,stroke-width:2px,color:#fff;
     classDef engine fill:#1e293b,stroke:#0f172a,stroke-width:2px,color:#fff;
+    classDef saas fill:#24b47e,stroke:#10b981,stroke-width:2px,color:#fff;
     classDef result fill:#10b981,stroke:#059669,stroke-width:2px,color:#fff;
 
     %% Nodes
-    User(("👤 User Input\n(Sketch, Text, or Code)")):::input
+    User(("👤 User Input\n(Sketch, Text, or Voice)")):::input
+    Auth{"🔐 Authentication\n& Aura Credits"}:::saas
 
     subgraph Workflow ["🤖 Multi-Agent Workflow (CrewAI)"]
         direction TB
@@ -32,192 +78,131 @@ flowchart TD
         DX -->|DX Report| SA
     end
 
-    subgraph Resilient ["⚙️ Resilient Engine Core"]
+    subgraph Core ["⚙️ Resilient Infrastructure"]
         LLM["Google Gemini\nOpenRouter\nOpenAI"]:::engine
+        DB_SaaS[/"Supabase:\nPostgreSQL + Storage"/]:::saas
     end
 
-    Final(["📁 Final Generated\nProject Workflow"]):::result
+    Final(["📁 ZIP Project Export\nvia Cloud Storage"]):::result
 
     %% Connections
-    User -.->|Upload via UI/IDE| VA
-
-    %% Engine Dependencies
+    User -.->|Upload IDE| Auth
+    Auth -->|Approved| VA
+    SA -->|Green Audit| Final
     Workflow -.- LLM
-
-    SA -->|Green AI Audit & Code| Final
+    Final -.->|Persisted| DB_SaaS
 ```
 
-## 🌟 Key Features
+### 🚀 Production SaaS Integration (TRL 6+)
+Aura-Dev operates as a modern Software-As-A-Service:
+- **Scalable Backend:** FastAPI handles background asynchronous task queues.
+- **Credit-Based Monetization:** In-built `Aura Credits` deducted strictly per full multi-agent generation run.
+- **Supabase Cloud Storage:** Generated projects are securely sandboxed, zipped, inserted into Cloud Buckets (`artifacts/`), and tracked via UUID allowing subsequent secure authorized downloads.
 
-- Multi-agent orchestration: Vision, Architect, Developer, Debug, Optimization, DX, and Sustainability agents.
-- Resilient LLM engine: Nuclear‑tier key & model rotation for Gemini / OpenRouter / OpenAI.
-- Vision integration: Turn UI sketches into working projects from hand‑drawn or Figma‑style mockups.
-- Browser UIs:
-  - Streamlit dashboard (`app.py`) for quick experiments.
-  - Vite + React IDE (`frontend/`) talking to a FastAPI backend (`backend/`).
+---
 
-## TRL LEVEL
+## 🔧 Technology Stack
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0f172a', 'edgeLabelBackground':'#1e293b', 'tertiaryColor': '#1e293b'}}}%%
-flowchart TD
-    %% Base styling
-    classDef default fill:#334155,stroke:#94a3b8,stroke-width:2px,color:#f8fafc;
-    classDef current fill:#10b981,stroke:#047857,stroke-width:3px,color:#fff;
-    classDef future fill:#1e293b,stroke:#475569,stroke-width:2px,color:#94a3b8,stroke-dasharray: 5 5;
+* **Frontend Pipeline**: React (Vite), TailwindCSS (Browser App IDE).
+* **AI & Orchestration Engine**: Python, Core CrewAI, Hardened LangChain wrappers over Gemini Pro Vision / Text APIs.
+* **Backend API Sandbox**: FastAPI, SQLAlchemy (PostgreSQL ORM), background workers.
+* **Database & BaaS**: Supabase (Auth, Object Tracking & Blob Storage for ZIP archives).
+* **Local Sandbox**: Streamlit (`app.py` for lightweight/offline immediate interactions).
 
-    %% Nodes
-    TRL1["TRL 1: Basic principles observed"]:::default
-    TRL2["TRL 2: Technology concept formulated"]:::default
-    TRL3["TRL 3: Experimental proof of concept"]:::default
-    TRL4["TRL 4: Technology validated in lab"]:::default
-    
-    TRL5["TRL 5: Technology validated in relevant environment\n(Core Multi-Agent LLM System + UI Prototype)"]:::current
-    
-    TRL6["TRL 6: Technology demonstrated in relevant environment"]:::future
-    TRL7["TRL 7: System prototype demonstration in operational environment"]:::future
-    TRL8["TRL 8: System complete and qualified"]:::future
-    TRL9["TRL 9: Actual system proven in operational environment"]:::future
+---
 
-    TRL1 --> TRL2
-    TRL2 --> TRL3
-    TRL3 --> TRL4
-    TRL4 --> TRL5
-    TRL5 -.-> TRL6
-    TRL6 -.-> TRL7
-    TRL7 -.-> TRL8
-    TRL8 -.-> TRL9
-
-    %% Annotations
-    subgraph Current Status: Aura-Dev AI
-        direction LR
-        NOTE[/"Current state: Functional prototypes available via Streamlit and React IDE. Resilient LLM routing (Gemini/OpenAI/Anthropic) implemented."/]
-        TRL5 --- NOTE
-    end
-```
-
-## 🏗️ Project Structure
+## 📂 Project Structure
 
 ```text
 visionlink/
-├── app.py              # Streamlit dashboard (7‑agent workflow)
-├── agents.py           # CrewAI agent definitions
-├── tasks.py            # CrewAI task definitions
-├── crew_flow.py        # CrewAI orchestration (7‑agent crew)
-├── direct_flow.py      # Direct, streaming 7‑phase flow (used by backend)
-├── resilient_engine.py # Hardened LangChain LLM wrapper
-├── tools.py            # Custom CrewAI tools (file writer, file lister)
-├── backend/
-│   └── main.py         # FastAPI backend (Aura IDE API)
-├── frontend/           # Vite + React frontend (Aura IDE)
-├── generated_project/  # Output folder for generated code
-└── venv/               # Python virtualenv (local)
+├── app.py              # Lightweight Streamlit dashboard (Quick mode)
+├── agents.py           # Core CrewAI Prompts/Agents mappings
+├── tasks.py            # Expected Output definitions for CrewAI
+├── direct_flow.py      # Resilient generation script (Streaming backend)
+├── resilient_engine.py # Nuclear-tier error-fallback LLM handler 
+├── background/         
+│   ├── main.py         # FastAPI App (Authentication, Routers, Supabase logic)
+│   ├── routers/        # Resource specific API routes
+│   └── models.py       # User / Project schemas
+├── frontend/           # The Vite + React Next-Gen Dashboard UI
+├── requirements.txt    # Essential python bindings
+└── ...
 ```
 
-## 🔧 Prerequisites
+---
 
+## ⚙️ Setup & Installation Instructions
+
+### Prerequisites
 - Python 3.10+
-- Node.js + npm (for the React frontend)
-- LLM API keys in `.env`:
-  - `GOOGLE_API_KEY`, optionally `GOOGLE_API_KEY_2` … `GOOGLE_API_KEY_8`
-  - `OPENROUTER_API_KEY` (optional, for OpenRouter)
-  - `OPENAI_API_KEY` (optional, for OpenAI)
+- Node.js (v16+) and npm
+- Valid external platform API Keys.
 
-## ⚙️ Setup
+### 1. Environment Configurations
+Clone the reporitory:
+```bash
+git clone https://github.com/Pranesh003/Aura-Dev-AI.git
+cd Aura-Dev-AI
+```
+Create `.env` at the root folder:
+```env
+# AI Models
+GOOGLE_API_KEY=your_gemini_key
+GOOGLE_API_KEY_2=optional_rotation_key
+OPENROUTER_API_KEY=optional_openrouter_key
+OPENAI_API_KEY=optional_openai_key
 
-1. Clone & enter the project (if not already):
+# Supabase SaaS Data Layer
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_KEY=your_supabase_anon_or_service_key
+```
 
-   ```bash
-   git clone https://github.com/Pranesh003/Aura-Dev-AI.git
-   cd Aura-Dev-AI
-   ```
+### 2. Startup Strategy A - Production IDE (FastAPI + React)
 
-2. Create & activate a virtualenv:
+Aura-Dev's primary environment relies on decoupled Front/Back ends.
 
-   ```bash
-   python -m venv venv
-   # Windows
-   venv\Scripts\activate
-   # macOS / Linux
-   source venv/bin/activate
-   ```
+**Terminal 1 (Backend Initialization & Workers)**
+```bash
+python -m venv venv
+venv\Scripts\activate  # Windows
+# or: source venv/bin/activate # Linux/Mac
 
-3. Install Python dependencies:
+pip install -r requirements.txt
+python backend/main.py
+```
+*API successfully mounts on `http://localhost:8000`*
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+**Terminal 2 (Frontend Interface)**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*IDE bounds to `http://localhost:5173`. Open your browser, authenticate, and begin generating software.*
 
-4. Configure environment variables in a `.env` at the repo root:
+### 3. Startup Strategy B - Local Diagnostic Interface (Streamlit)
 
-   ```env
-   GOOGLE_API_KEY=your_gemini_key
-   GOOGLE_API_KEY_2=optional_second_key
-   GOOGLE_API_KEY_3=...
-   OPENROUTER_API_KEY=optional_openrouter_key
-   OPENAI_API_KEY=optional_openai_key
-   ```
-
-5. Install frontend dependencies (once):
-
-   ```bash
-   cd frontend
-   npm install
-   cd ..
-   ```
-
-## 🌐 Running the Agent in the Browser
-
-### Option A — Aura IDE (React + FastAPI) ✅
-
-1. Start the backend (FastAPI) from the project root:
-
-   ```bash
-   # With the virtualenv activated
-   python backend/main.py
-   ```
-
-   This starts the API on `http://localhost:8000`.
-
-2. Start the frontend (Vite + React) in another terminal:
-
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-
-   Vite will display a URL like `http://localhost:5173`.  
-   Open it in your browser to use the Aura IDE, trigger the 7‑agent flow, and inspect generated files under `generated_project/`.
-
-### Option B — Streamlit Dashboard (Quick Mode)
-
-From the project root, with the virtualenv activated:
+For rapid offline diagnostics without SaaS database triggers:
 
 ```bash
+# With python VENV activated
 streamlit run app.py
 ```
+*Access via `http://localhost:8501`. Upload sketches directly for agent hand-off.*
 
-or:
+---
 
-```bash
-python -m streamlit run app.py
-```
+## 📈 Current Technology Readiness (TRL)
 
-Then open `http://localhost:8501` in your browser.  
-Upload a system sketch, describe your project, and click **“🚀 Run Aura-Dev (7-Agent Core Mode)”** to launch the full agentic workflow.
+Aura-Dev is evaluated at **TRL 6: Technology demonstrated in relevant environment**. 
+* The system is fully out of experimental local stages.
+* Background queue integrations, Database ORMs, actual deployed cloud-blob interaction (Supabase) are live. 
+* Resilient LLM routing achieves high stability against strict ratelimits dynamically.
 
-## 🤖 Agents & Roles (High Level)
+---
 
-- Vision Agent – Turns UI sketches into detailed visual/structural context.
-- Architect Agent – Expands context into a multi‑layer architecture with diagrams.
-- Developer Agent – Generates a full project into `generated_project/`.
-- Debug Agent – Self‑heals and refactors code, writing `debug_report.md`.
-- Optimization Agent – Reduces dependency/runtimes overhead.
-- DX Agent – Audits cognitive load and developer experience.
-- Sustainability Agent – Performs a Green‑AI audit and impact report.
-
-## 📄 License
+## 📄 License & Maintainer
 
 This project is licensed under the MIT License – see `LICENSE` for details.
 
-Built with ❤️ by [Pranesh003](https://github.com/Pranesh003)
+Built with logic, efficiency, and sustainability by **[Pranesh003](https://github.com/Pranesh003)**. 🚀
