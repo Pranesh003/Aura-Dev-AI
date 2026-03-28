@@ -18,7 +18,7 @@ def write_file_tool(data: str):
         filename, content = data.split("|", 1)
         filename = filename.strip()
 
-        # Sanitize filename for Windows
+
         import re
 
         filename = filename.replace("\0", "")
@@ -51,7 +51,7 @@ def write_file_tool(data: str):
         if base_name in reserved:
             filename = f"safe_{filename}"
 
-        # Clean up code_content if it's wrapped in markdown backticks
+
         content = content.strip()
         if content.startswith("```"):
             lines = content.splitlines()

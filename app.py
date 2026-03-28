@@ -3,17 +3,14 @@ import os
 import time
 from dotenv import load_dotenv
 
-# MUST BE AT THE TOP
 load_dotenv()
-
-# Core engine is now direct_flow.py for stabilized free-tier execution.
 
 st.set_page_config(page_title="Aura-Dev AI", page_icon="🌍")
 
 st.title("🛡️ Aura-Dev: Multimodal Agentic Framework")
 st.caption("Inclusive Global Software Development | SDG 9: Industry, Innovation, & Infrastructure")
 
-# Sidebar for Configuration
+
 with st.sidebar:
     st.header("⚙️ Configuration")
     model_choice = st.selectbox(
@@ -42,7 +39,7 @@ voice_requirements = st.text_area("Voice/Functional Requirements (What should th
                                  placeholder="e.g., A low-bandwidth farm tracking app that works offline...")
 user_desc = st.text_input("Project Objective (Short name/goal)")
 
-# Helper to pretty-print durations
+
 def format_duration(seconds: float) -> str:
     if not seconds or seconds < 0:
         return "0s"
@@ -64,7 +61,7 @@ if st.button("🚀 Run Aura-Dev (7-Agent Core Mode)"):
         status_text = st.empty()
         meta_text = st.empty()
 
-        # Track run start time and a simple in-memory log of updates
+       
         start_time = time.time()
         phase_status = {
             "Vision": "pending",
@@ -78,7 +75,7 @@ if st.button("🚀 Run Aura-Dev (7-Agent Core Mode)"):
         run_log = []
 
         with st.status("Aura-Dev: Orchestrating 7-Agent Core Intelligence (CrewAI)...", expanded=True) as status:
-            # Use specific model name for direct SDK
+
             vision_model_id = model_choice.split("/")[-1]
             
             for update in run_aura_crew(temp_image_path, user_desc, voice_requirements, model_choice, status_obj=status):
@@ -90,12 +87,11 @@ if st.button("🚀 Run Aura-Dev (7-Agent Core Mode)"):
                     meta_text.markdown(f"**Elapsed:** {format_duration(elapsed)} • **Status:** Error")
                     break
                 
-                # Core status + progress
+
                 status_msg = update["status"]
                 status_text.text(status_msg)
                 progress_bar.progress(update["progress"])
 
-                # Update timer + simple phase view
                 elapsed = time.time() - start_time
 
                 if "vision" in update:
@@ -123,7 +119,7 @@ if st.button("🚀 Run Aura-Dev (7-Agent Core Mode)"):
                     f"**Phase(s):** {current_phase}"
                 )
 
-                # Append to in-memory log
+
                 run_log.append(f"{format_duration(elapsed)} • {status_msg}")
                 
                 if "vision" in update:
@@ -160,7 +156,7 @@ if st.button("🚀 Run Aura-Dev (7-Agent Core Mode)"):
                     st.success("7-Agent Workflow Completed!")
                     status.update(label="Workflow Complete!", state="complete")
 
-            # After loop, if we have any log lines, show a compact execution log
+
             if run_log:
                 with st.expander("📜 Execution Timeline (status & timing)"):
                     for line in run_log:
@@ -168,7 +164,6 @@ if st.button("🚀 Run Aura-Dev (7-Agent Core Mode)"):
     else:
         st.error("Please provide both a sketch and a description.")
 
-# Display Results if available
 if "result" in st.session_state:
     result = st.session_state.result
     vision = st.session_state.get("vision", "No vision context available.")
@@ -190,7 +185,6 @@ if "result" in st.session_state:
                     del st.session_state[key]
             st.rerun()
 
-    # Output Visualization
     tab0, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "👁️ Vision Context",
         "🏗️ Architecture & Blueprint", 

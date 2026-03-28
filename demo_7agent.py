@@ -24,6 +24,7 @@ def run_demo():
             print(f"❌ ERROR: {update['error']}")
             break
 
+
 if __name__ == "__main__":
     # Ensure a temp image exists
     from PIL import Image

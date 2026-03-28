@@ -7,7 +7,7 @@ def test_engine():
     image_path = "temp_sketch.png"
     user_desc = "Verification Test: Simple Todo App"
     voice_reqs = "Low bandwidth, high efficiency."
-    model_id = "gemini-2.0-flash" # Default to a more stable model
+    model_id = "gemini-2.0-flash" 
 
     try:
         for update in run_direct_flow(image_path, user_desc, voice_reqs, model_id=model_id):
