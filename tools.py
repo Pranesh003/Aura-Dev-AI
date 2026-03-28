@@ -1,5 +1,6 @@
 import os
 from crewai.tools import tool
+from logger_config import job_id_var
 
 from memory_store import append_memory, load_memory, summarize_memory
 
@@ -7,7 +8,7 @@ from memory_store import append_memory, load_memory, summarize_memory
 @tool("write_file_tool")
 def write_file_tool(data: str):
     """
-    Write code to a file under generated_project/.
+    Write code to a file under the active project directory.
     Input format: 'relative/path/filename.ext|code_content'
     """
     try:
@@ -60,11 +61,17 @@ def write_file_tool(data: str):
                 lines = lines[:-1]
             content = "\n".join(lines).strip()
 
-        base_dir = os.path.abspath("generated_project")
+        try:
+            job_id = job_id_var.get()
+        except LookupError:
+            job_id = "global"
+            
+        target_dir = os.path.join("jobs", job_id, "generated_project") if job_id != "global" else "generated_project"
+        base_dir = os.path.abspath(target_dir)
         filepath = os.path.abspath(os.path.join(base_dir, filename))
 
         if not filepath.startswith(base_dir):
-            return f"Error: Attempted to write outside of generated_project/ directory: {filename}"
+            return f"Error: Attempted to write outside of {target_dir} directory: {filename}"
 
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         with open(filepath, "w", encoding="utf-8") as f:
@@ -78,7 +85,7 @@ def write_file_tool(data: str):
                 "summary": f"Agent wrote file {filename}",
             },
         )
-        return f"Successfully created {filename} in generated_project/"
+        return f"Successfully created {filename} in {target_dir}"
     except Exception as e:
         append_memory(
             "file_events",
@@ -94,16 +101,24 @@ def write_file_tool(data: str):
 @tool("list_generated_files")
 def list_generated_files(dummy: str = ""):
     """
-    List files that exist in the generated_project directory.
+    List files that exist in the active project directory.
     """
     try:
+        try:
+            job_id = job_id_var.get()
+        except LookupError:
+            job_id = "global"
+            
+        target_dir = os.path.join("jobs", job_id, "generated_project") if job_id != "global" else "generated_project"
+
         files = []
-        for root, _, filenames in os.walk("generated_project"):
-            for filename in filenames:
-                rel_path = os.path.relpath(
-                    os.path.join(root, filename), "generated_project"
-                )
-                files.append(rel_path)
+        if os.path.exists(target_dir):
+            for root, _, filenames in os.walk(target_dir):
+                for filename in filenames:
+                    rel_path = os.path.relpath(
+                        os.path.join(root, filename), target_dir
+                    )
+                    files.append(rel_path)
         if not files:
             return "No files generated yet."
         return "Generated files:\n" + "\n".join(sorted(files))

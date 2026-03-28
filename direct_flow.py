@@ -1,4 +1,7 @@
 import os
+from logger_config import get_logger, set_job_id
+logger = get_logger('direct_flow')
+
 import time
 import base64
 import google.generativeai as genai
@@ -80,7 +83,7 @@ def safe_generate(client, model_id, prompt, is_openai, image_path=None, api_key=
             if is_quota or is_transient:
                 if attempt < max_retries - 1:
                     wait_time = retry_delay * (attempt + 1)
-                    print(f"[RETRY] {model_id} hit transient error: {err_msg[:50]}... Waiting {wait_time}s")
+                    logger.info(f"[RETRY] {model_id} hit transient error: {err_msg[:50]}... Waiting {wait_time}s")
                     time.sleep(wait_time)
                     continue
                 raise RuntimeError(f"QUOTA_EXHAUSTED: {model_id}")
@@ -88,10 +91,11 @@ def safe_generate(client, model_id, prompt, is_openai, image_path=None, api_key=
             # Default fallback for unhandled exceptions
             raise e
 
-def run_direct_flow(image_path, user_desc, voice_reqs, model_id="gemini-2.0-flash"):
+def run_direct_flow(image_path, user_desc, voice_reqs, model_id="gemini-2.0-flash", job_id="global"):
     """
     Executes a 7-phase agentic flow with robust multi-key fallback.
     """
+    set_job_id(job_id)
     google_keys = [
         os.getenv("GOOGLE_API_KEY"),
         os.getenv("GOOGLE_API_KEY_2"),
@@ -135,7 +139,7 @@ def run_direct_flow(image_path, user_desc, voice_reqs, model_id="gemini-2.0-flas
             if is_openrouter:
                 try:
                     raw_model = current_model.replace("openrouter/", "")
-                    print(f"[OPENROUTER] Trying {raw_model}...")
+                    logger.info(f"[OPENROUTER] Trying {raw_model}...")
                     # Manual OpenRouter Call via OpenAI Client
                     router_client = OpenAI(
                         base_url="https://openrouter.ai/api/v1",
@@ -144,7 +148,7 @@ def run_direct_flow(image_path, user_desc, voice_reqs, model_id="gemini-2.0-flas
                     return safe_generate(router_client, raw_model, prompt, True, image_path if has_image else None)
                 except Exception as e:
                     if "402" in str(e) or "quota" in str(e).lower():
-                        print(f"[QUOTA] OpenRouter limit reached. Rotating...")
+                        logger.info(f"[QUOTA] OpenRouter limit reached. Rotating...")
                     else: raise e
             elif not is_openai:
                 # Try all Google keys for the current model
@@ -152,21 +156,21 @@ def run_direct_flow(image_path, user_desc, voice_reqs, model_id="gemini-2.0-flas
                 for key in keys_to_try:
                     k_idx = google_keys.index(key) + 1
                     try:
-                        print(f"[ROTATION] {current_model} | Key {k_idx}/8...")
+                        logger.info(f"[ROTATION] {current_model} | Key {k_idx}/8...")
                         res = safe_generate(client, current_model, prompt, is_openai, image_path if has_image else None, api_key=key)
                         current_key_idx = google_keys.index(key) 
                         return res
                     except Exception as e:
                         if "MODEL_NOT_FOUND" in str(e):
-                            print(f"[ERROR] Model {current_model} NOT FOUND. Skipping all keys...")
+                            logger.info(f"[ERROR] Model {current_model} NOT FOUND. Skipping all keys...")
                             break # Go immediately to next model fallback
                         if "QUOTA_EXHAUSTED" in str(e):
-                            print(f"[QUOTA] Key {k_idx} hit limit for {current_model}. Rotating key...")
+                            logger.info(f"[QUOTA] Key {k_idx} hit limit for {current_model}. Rotating key...")
                             continue 
                         raise e
             else:
                 try:
-                    print(f"[OPENAI] Trying OpenAI model {current_model}...")
+                    logger.info(f"[OPENAI] Trying OpenAI model {current_model}...")
                     return safe_generate(client, current_model, prompt, is_openai, image_path if has_image else None)
                 except Exception as e:
                     if "QUOTA_EXHAUSTED" not in str(e):
@@ -175,7 +179,7 @@ def run_direct_flow(image_path, user_desc, voice_reqs, model_id="gemini-2.0-flas
             # If all keys failed for this model, fallback to next model
             next_model = get_next_model(current_model, is_vision=has_image)
             wait_time = 3 
-            print(f"[NUCLEAR_FAILOVER] Exhausted {current_model}. Falling back to {next_model} in {wait_time}s...")
+            logger.info(f"[NUCLEAR_FAILOVER] Exhausted {current_model}. Falling back to {next_model} in {wait_time}s...")
             current_model = next_model
             current_key_idx = 0
             attempts += 1
@@ -184,9 +188,10 @@ def run_direct_flow(image_path, user_desc, voice_reqs, model_id="gemini-2.0-flas
         raise RuntimeError("CRITICAL FAILURE: Complete resource exhaustion after exhaustive Nuclear-Tier rotation.")
 
     # Setup project
-    if os.path.exists("generated_project"):
-        shutil.rmtree("generated_project")
-    os.makedirs("generated_project")
+    project_dir = os.path.join("jobs", job_id, "generated_project") if job_id != "global" else "generated_project"
+    if os.path.exists(project_dir):
+        shutil.rmtree(project_dir)
+    os.makedirs(project_dir)
 
     # PHASE 1: VISION AGENT
     yield {"status": f"Phase 1: Vision Agent Analyzing Sketch (Resilience Active)...", "progress": 5}
@@ -245,7 +250,7 @@ def run_direct_flow(image_path, user_desc, voice_reqs, model_id="gemini-2.0-flas
                             lines = code.splitlines()
                             if len(lines) > 2: code = "\n".join(lines[1:-1])
                         
-                        filepath = os.path.join("generated_project", filename)
+                        filepath = os.path.join(project_dir, filename)
                         os.makedirs(os.path.dirname(filepath), exist_ok=True)
                         with open(filepath, "w", encoding="utf-8") as f:
                             f.write(code)
@@ -266,7 +271,7 @@ def run_direct_flow(image_path, user_desc, voice_reqs, model_id="gemini-2.0-flas
     """
     try:
         debug_report = execute_with_fallback(debug_prompt)
-        with open(os.path.join("generated_project", "debug_report.md"), "w", encoding="utf-8") as f:
+        with open(os.path.join(project_dir, "debug_report.md"), "w", encoding="utf-8") as f:
             f.write(debug_report)
         yield {"status": "Debug & Healing Complete!", "debug": debug_report, "progress": 82}
     except Exception as e:

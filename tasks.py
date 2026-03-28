@@ -52,12 +52,12 @@ dev_task = Task(
     description=(
         "Generate real project files based on the Architectural Blueprint. "
         "You MUST use the write_file_tool to save EVERY single file required for the complete "
-        "project into the generated_project/ directory. When using the write_file_tool, pass the "
+        "project into the active project directory. When using the write_file_tool, pass the "
         "input EXACTLY in this format: filename.extension|code_content. Do not just output the "
         "code; you must execute the write_file_tool for each file. Ensure production-grade "
         "architecture, modularity, and PEP8 compliance."
     ),
-    expected_output="Complete, production-ready codebase in generated_project/ directory.",
+    expected_output="Complete, production-ready codebase in the active project directory.",
     agent=developer,
     context=[arch_task],
 )
@@ -78,11 +78,11 @@ debug_task = Task(
 test_task = Task(
     description=(
         "Design and implement automated tests (unit, integration or API-level as appropriate) "
-        "for the generated project. Use write_file_tool to create test files under generated_project/. "
+        "for the generated project. Use write_file_tool to create test files under the active project directory. "
         "Where possible, infer realistic test scenarios from the roadmap, blueprint and requirements. "
         "Summarize overall coverage and remaining risks."
     ),
-    expected_output="A test suite in generated_project/ and a concise test strategy summary.",
+    expected_output="A test suite in the active project directory and a concise test strategy summary.",
     agent=test_engineer,
     context=[dev_task, debug_task],
 )
@@ -130,9 +130,9 @@ documentation_task = Task(
         "Generate and/or refine high-quality documentation for the project. This includes a "
         "top-level README, architecture overview, and any API or usage docs that are critical "
         "for onboarding a new engineer. Use write_file_tool to persist documentation into "
-        "generated_project/ and keep a brief changelog in memory."
+        "the active project directory and keep a brief changelog in memory."
     ),
-    expected_output="Documentation files in generated_project/ and a short documentation changelog.",
+    expected_output="Documentation files in the active project directory and a short documentation changelog.",
     agent=documentation_engineer,
     context=[arch_task, dev_task, debug_task, opt_task],
 )

@@ -1,4 +1,7 @@
 import os
+from logger_config import get_logger
+logger = get_logger('crew_flow')
+
 import shutil
 from crewai import Crew, Process
 from tasks import (
@@ -62,7 +65,7 @@ def run_aura_crew(image_path, user_desc, voice_reqs, model_choice=None, status_o
         """Callback to store task completion status."""
         task_name = task_output.description.split('\n')[0][:50]
         msg = f"✅ Completed: {task_name}"
-        print(f"DEBUG: {msg}")
+        logger.info(f"{msg}")
         if status_obj:
             status_obj.write(msg)
 

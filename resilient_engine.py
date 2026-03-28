@@ -1,4 +1,7 @@
 import os
+from logger_config import get_logger
+logger = get_logger('resilient_engine')
+
 import time
 import random
 from typing import Any, List, Optional
@@ -58,7 +61,7 @@ def gemini_shield():
     """Nuclear patch to strip additionalProperties from ALL Gemini API requests."""
     # Disabled in 7-agent version as the new google-genai library no longer uses this syntax.
     # The patch causes a TypeError: Models.generate_content() takes 1 positional argument.
-    print("DEBUG: Gemini Shield disabled for modern google-genai compatibility.")
+    logger.info(f"Gemini Shield disabled for modern google-genai compatibility.")
 
 # Apply patches immediately
 gemini_shield()
@@ -138,9 +141,9 @@ class ResilientLLM(BaseChatModel):
         for m in messages:
             if isinstance(m, HumanMessage) and "temp_sketch.png" in str(m.content):
                 image_path = os.path.abspath("temp_sketch.png")
-                print(f"DEBUG: Found image path in messages, normalized to: {image_path}")
+                logger.info(f"Found image path in messages, normalized to: {image_path}")
                 if not os.path.exists(image_path):
-                    print(f"DEBUG: WARNING - image_path does not exist: {image_path}")
+                    logger.info(f"WARNING - image_path does not exist: {image_path}")
                 break
 
         # Sanitize tools for Gemini compatibility
@@ -160,7 +163,7 @@ class ResilientLLM(BaseChatModel):
             if is_openrouter:
                 raw_model = current_model.replace("openrouter/", "") if current_model.startswith("openrouter/") else current_model
                 try:
-                    print(f"DEBUG: [ATTEMPT] OpenRouter Model={raw_model}")
+                    logger.info(f"[ATTEMPT] OpenRouter Model={raw_model}")
                     llm = ChatOpenAI(
                         base_url="https://openrouter.ai/api/v1",
                         model=raw_model,
@@ -169,13 +172,13 @@ class ResilientLLM(BaseChatModel):
                         max_retries=0
                     )
                     res = llm._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
-                    print("DEBUG: _generate returned successfully via OpenRouter.")
+                    logger.info(f"_generate returned successfully via OpenRouter.")
                     self.current_key_idx = 0
                     return self._normalize_result(res)
                 except Exception as e:
                     import sys
                     exc_type, exc_obj, exc_tb = sys.exc_info()
-                    print(f"DEBUG: [OpenRouter ERROR] {str(e)}")
+                    logger.info(f"[OpenRouter ERROR] {str(e)}")
                     if "quota" not in str(e).lower() and "429" not in str(e).lower() and "insufficient" not in str(e).lower() and "credits" not in str(e).lower():
                         raise e
             elif not is_openai:
@@ -183,7 +186,7 @@ class ResilientLLM(BaseChatModel):
                 for key in keys_to_try:
                     k_idx = self.google_keys.index(key) + 1
                     try:
-                        print(f"DEBUG: [ATTEMPT] Model={current_model} | Key={k_idx}/8")
+                        logger.info(f"[ATTEMPT] Model={current_model} | Key={k_idx}/8")
                         # Extract raw model name for the native SDK
                         raw_model = current_model
                         if current_model.startswith("gemini/"):
@@ -203,27 +206,27 @@ class ResilientLLM(BaseChatModel):
                         if image_path and current_model in VISION_MODELS:
                              pass
                         
-                        print(f"DEBUG: Calling underlying _generate...")
+                        logger.info(f"Calling underlying _generate...")
                         res = llm._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
-                        print(f"DEBUG: _generate returned successfully.")
+                        logger.info(f"_generate returned successfully.")
                         self.current_key_idx = self.google_keys.index(key)
                         return self._normalize_result(res)
                     except Exception as e:
                         import sys
                         exc_type, exc_obj, exc_tb = sys.exc_info()
-                        print(f"DEBUG: [ERROR] Type={exc_type.__name__} | Msg={str(e)} | Line={exc_tb.tb_lineno}")
+                        logger.info(f"[ERROR] Type={exc_type.__name__} | Msg={str(e)} | Line={exc_tb.tb_lineno}")
                         
                         err_msg = str(e).lower()
                         if any(x in err_msg for x in ["404", "not found", "not supported", "not exist"]):
                             break # Skip keys for this model
                         if any(x in err_msg for x in ["429", "resource_exhausted", "quota", "rate limit reached"]):
                             msg = f"🔄 Quota hit for key {k_idx}. Rotating to next key..."
-                            print(f"DEBUG: {msg}")
+                            logger.info(f"{msg}")
                             continue # Try next key
                         # Handle transient 500s/503s
                         if any(x in err_msg for x in ["500", "503", "service unavailable", "internal error"]):
                             msg = f"⏳ Server error. Quick retry with next key..."
-                            print(f"DEBUG: {msg}")
+                            logger.info(f"{msg}")
                             time.sleep(1) # Reduced from 5
                             continue
                         raise e
@@ -245,7 +248,7 @@ class ResilientLLM(BaseChatModel):
             current_model = self._get_fallback_model(current_model)
             self.current_key_idx = 0
             attempts += 1
-            print(f"DEBUG: Falling back to model {current_model} (Attempt {attempts}/3)")
+            logger.info(f"Falling back to model {current_model} (Attempt {attempts}/3)")
             time.sleep(1) # Reduced from 3
 
         raise RuntimeError("CRITICAL FAILURE: Complete resource exhaustion after exhaustive rotation.")

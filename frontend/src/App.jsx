@@ -23,6 +23,17 @@ function App() {
   const [userDesc, setUserDesc] = useState('');
   const [voiceReqs, setVoiceReqs] = useState('');
   const [imageUrl, setImageUrl] = useState(null);
+  const [wsLogs, setWsLogs] = useState([]);
+  const [activeJobId, setActiveJobId] = useState(null);
+
+  useEffect(() => {
+    if (!activeJobId) return;
+    const ws = new WebSocket(`ws://localhost:8000/api/ws/logs/${activeJobId}`);
+    ws.onmessage = (event) => {
+      setWsLogs((prev) => [...prev, event.data].slice(-50)); // Keep last 50 logs
+    };
+    return () => ws.close();
+  }, [activeJobId]);
 
   useEffect(() => {
     const interval = setInterval(fetchStatus, 2000);
@@ -39,20 +50,26 @@ function App() {
   };
 
   const fetchStatus = async () => {
+    if (!activeJobId) return;
     try {
-      const res = await axios.get(`${API_BASE}/api/status`);
+      const res = await axios.get(`${API_BASE}/api/status/${activeJobId}`);
       setAuraStatus(res.data);
     } catch (err) {}
   };
 
   const handleRunAura = async () => {
     try {
-      await axios.post(`${API_BASE}/api/run`, {
+      const res = await axios.post(`${API_BASE}/api/run`, {
         user_desc: userDesc,
         voice_reqs: voiceReqs,
         model_id: 'gemini-2.0-flash',
         image_data: imageUrl
       });
+      if (res.data && res.data.job_id) {
+        setActiveJobId(res.data.job_id);
+        setAuraStatus(prev => ({ ...prev, is_running: true, phases: {} }));
+        setWsLogs(['Initializing context... connected to isolated job instance.']);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -156,6 +173,14 @@ function App() {
                 </ul>
               </div>
             )}
+
+            <div className="live-terminal" style={{ marginTop: '20px', background: '#0a0a0a', border: '1px solid #333', padding: '15px', borderRadius: '8px', fontFamily: 'monospace', color: '#00ffcc', fontSize: '12px', height: '150px', overflowY: 'auto' }}>
+              <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#fff', borderBottom: '1px solid #333', paddingBottom: '5px' }}>Terminal Output (Live)</h3>
+              {wsLogs.map((log, i) => (
+                <div key={i}>{log}</div>
+              ))}
+              {!activeJobId && <div style={{ color: '#555' }}>Awaiting transmission... Enter a vision sketch to begin.</div>}
+            </div>
           </div>
         </section>
 
