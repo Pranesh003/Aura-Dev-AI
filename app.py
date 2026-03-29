@@ -10,7 +10,6 @@ st.set_page_config(page_title="Aura-Dev AI", page_icon="🌍")
 st.title("🛡️ Aura-Dev: Multimodal Agentic Framework")
 st.caption("Inclusive Global Software Development | SDG 9: Industry, Innovation, & Infrastructure")
 
-
 with st.sidebar:
     st.header("⚙️ Configuration")
     model_choice = st.selectbox(
