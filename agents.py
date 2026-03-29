@@ -7,6 +7,7 @@ tools = DevelopmentTools()
 # Shared Resilient LLM
 resilient_llm = get_resilient_llm(model_name="gemini-1.5-flash")
 
+
 # 0. Project Planner & Orchestrator
 planner = Agent(
     role="Project Planner & Orchestrator",
