@@ -12,6 +12,7 @@ import shutil
 
 load_dotenv()
 
+
 # High-resilience key and model rotation
 VISION_MODELS = [
     "openrouter/qwen/qwen3.5-35b-a3b",
