@@ -6,6 +6,7 @@
 [![React](https://img.shields.io/badge/React-Frontend-61DAFB?style=for-the-badge)](https://react.dev)
 [![Supabase](https://img.shields.io/badge/Supabase-SaaS%20Storage-24b47e?style=for-the-badge)](https://supabase.com)
 
+
 Aura-Dev AI is an elite **Autonomous Multi-Model Agentic Software Engineering System** designed to automate large parts of the software lifecycle, moving from abstract visual requirements to complete generation.
 
 It leverages a powerful **7-Agent CrewAI Orchestration** over a **Resilient LLM Engine** (Google Gemini, OpenRouter, OpenAI) to go from sketch → architecture → code → self‑healing → optimization → cognitive audits → sustainability reports.
